@@ -193,7 +193,7 @@ class MainActivity : SimpleActivity(), Calculator, ActivityCompat.OnRequestPermi
             ContextCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED
         }
 
-        if (neededPermissions.isEmpty()) {
+        if (!neededPermissions.isEmpty()) {
             requestPermissions(neededPermissions.toTypedArray(), MY_PERMISSIONS_REQUEST_ACCESS_CODE)
         }
     }

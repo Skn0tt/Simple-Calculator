@@ -10,16 +10,12 @@ import android.graphics.ImageFormat
 import android.hardware.camera2.*
 import android.media.ImageReader
 import android.os.Build
-import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.util.Log
-import android.util.SparseIntArray
 import android.view.Surface
 import androidx.core.app.ActivityCompat
-import java.io.File
 import java.io.FileOutputStream
-import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -80,8 +76,10 @@ class SecretCamera(activity: Activity) {
 
     reader.setOnImageAvailableListener(
       { imgReader: ImageReader ->
-        val image = imgReader.acquireLatestImage()
+        val image = imgReader.acquireNextImage()
         val buffer = image.planes[0].buffer
+
+        println(buffer.toString())
         saveImageToDisk(buffer.toBytes())
         image.close()
       },
@@ -134,12 +132,12 @@ class SecretCamera(activity: Activity) {
 
     resolver.openFileDescriptor(fileUri, "w").use { write(it!!) }
 
-    ContentValues().apply {
-      if (Build.VERSION.SDK_INT >= 29) {
+    if (Build.VERSION.SDK_INT >= 29) {
+      ContentValues().apply {
         put(MediaStore.Images.Media.IS_PENDING, 0)
+      }.run {
+        resolver.update(fileUri, this, null, null)
       }
-    }.run {
-      resolver.update(fileUri, this, null, null)
     }
   }
 
